@@ -1,15 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
-#include <limits.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <pwd.h>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <linux/limits.h>
+
 #include "sh.h"
 #define MAXLINE 128
 
@@ -77,6 +66,10 @@ int sh( int argc, char **argv, char **envp ) {
             where(args[1], pathlist);
         } else if(strcmp("ls", args[0]) == 0){
             list(args[1]);
+        } else if(strcmp("pwd", args[0]) == 0){
+            printWorkingDir();
+        } else if(strcmp("pid", args[0]) == 0){
+            
         }
     
 
@@ -94,28 +87,81 @@ int sh( int argc, char **argv, char **envp ) {
   return 0;
 } /* sh() */
 
+
+/* loop through pathlist until finding command and return it.  Return
+NULL when not found. */
 char *which(char *command, struct pathelement *pathlist ) {
+    char cmd[64];
     if(command == NULL){
-        printf("add a command to which \n");
+        printf("Too few arguments \n");
     }else{
-        /* loop through pathlist until finding command and return it.  Return
-        NULL when not found. */
-        printf("you are in which: %s \n",command);
+        while(pathlist != NULL){
+           sprintf(cmd, "%s/%s", pathlist->element, command);
+            if(access(cmd, X_OK)){
+                printf("[%s]\n", cmd);
+                break;
+            }
+             pathlist= pathlist->next;
+        }
     }
 
-} /* which() */
+}
 
+
+/* loop through pathlist until finding all commands and return it.  Return
+NULL when not found. */
 char *where(char *command, struct pathelement *pathlist ) {
+    char cmd[64];
+
     if(command == 0){
-        printf("Add a comment to where \n");
+        printf("Too few arguments \n");
     } else {
-        /* similarly loop through finding all locations of command */
-        /* where() */
-         printf("you are in where: %s \n",command);
+        while(pathlist){
+            sprintf(cmd, "%s/%s", pathlist->element, command);
+            if(access(cmd, X_OK)){
+                printf("[%s]\n", cmd);
+            }
+             pathlist= pathlist->next;
+        }
     }
 } 
 
+
+/* fiegure out how to list specifc files names */
 void list ( char *dir ) {
-  /* see man page for opendir() and readdir() and print out filenames for
-  the directory passed */
-} /* list() */
+    DIR *directory;
+    struct dirent * dirInfo;
+
+    if(dir == NULL){
+        directory = opendir(".");
+    } else {
+
+        /* possible iterate and only print the file name */ 
+       if((directory = opendir(dir)) != NULL){
+          printf("can't open %s \n", dir);
+          return;
+       }
+    }
+
+    while((dirInfo = readdir(directory)) != NULL){
+        printf("%s \n", dirInfo -> d_name);
+    }
+
+    closedir(directory);
+  
+  
+} 
+
+/* Print the current working directory */ 
+void printWorkingDir() {
+    char * pwd = getcwd(NULL, PATH_MAX+1);
+    printf("[%s] \n", pwd);
+}
+
+/* Prints the process id of the shell */
+void printPid(){
+    printf("%d \n", getpid());
+}
+
+
+
