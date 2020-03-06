@@ -1,4 +1,4 @@
-### My Shell
+# My Shell
 ---
 
 ## Syntax for the shell 
