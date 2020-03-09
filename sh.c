@@ -2,6 +2,8 @@
 #include "sh.h"
 #define MAXLINE 128
 
+
+
 int sh( int argc, char **argv, char **envp ) {
     char *prompt = calloc(PROMPTMAX, sizeof(char));
     char *commandline = calloc(MAX_CANON, sizeof(char));
@@ -12,7 +14,7 @@ int sh( int argc, char **argv, char **envp ) {
     char *homedir;
     struct pathelement *pathlist;
     char * token;
-   
+    char * prev = getcwd(NULL, PATH_MAX+1);
 
     char cmdBuffer[MAXLINE];
 
@@ -35,7 +37,7 @@ int sh( int argc, char **argv, char **envp ) {
     
     while ( go ) {
         /* print your prompt */
-        printf("%s> ", pwd);
+        printf("cashelll>");
 
         /* get command line and process */
         fgets(cmdBuffer, MAXLINE, stdin);
@@ -55,6 +57,9 @@ int sh( int argc, char **argv, char **envp ) {
             argsIndex++;
             token = strtok(NULL, " ");
         }
+        args[argsIndex] = NULL;
+        
+    
 
         /* check for each builiuft in command and implement */
         if(strcmp("exit",args[0]) == 0){
@@ -65,14 +70,19 @@ int sh( int argc, char **argv, char **envp ) {
         }else if(strcmp("where", args[0]) == 0){
             where(args[1], pathlist);
         } else if(strcmp("ls", args[0]) == 0){
-            list(args[1]);
+            list(args);
         } else if(strcmp("pwd", args[0]) == 0){
             printWorkingDir();
         } else if(strcmp("pid", args[0]) == 0){
-            
+            printPid();
+        }else if(strcmp("cd", args[0]) == 0){ 
+            changeDir(args, prev);
         }
     
 
+// prev = getcwd(NULL, PATH_MAX+1);
+        
+    
 
         /*  else  program to exec */
         //{
@@ -128,17 +138,19 @@ char *where(char *command, struct pathelement *pathlist ) {
 
 
 /* fiegure out how to list specifc files names */
-void list ( char *dir ) {
+void list ( char **dir ) {
     DIR *directory;
     struct dirent * dirInfo;
 
-    if(dir == NULL){
+    if(dir[1] == NULL){
         directory = opendir(".");
     } else {
 
+
+        
         /* possible iterate and only print the file name */ 
-       if((directory = opendir(dir)) != NULL){
-          printf("can't open %s \n", dir);
+       if((directory = opendir(dir[1])) == NULL){
+          printf("can't open %s \n", dir[1]);
           return;
        }
     }
@@ -148,19 +160,38 @@ void list ( char *dir ) {
     }
 
     closedir(directory);
-  
-  
 } 
 
 /* Print the current working directory */ 
 void printWorkingDir() {
     char * pwd = getcwd(NULL, PATH_MAX+1);
-    printf("[%s] \n", pwd);
+    printf("%s \n", pwd);
 }
 
 /* Prints the process id of the shell */
 void printPid(){
     printf("%d \n", getpid());
+}
+
+void changeDir(char **args, char * prev){   
+    char * tmpPrev;
+
+    if(args[1] == NULL){
+        strcpy(prev, getcwd(NULL, PATH_MAX+1));
+        chdir(getenv("HOME"));
+        return;
+    }else if(strcmp(args[1], "-") == 0) {
+    
+        strcpy(tmpPrev, prev);
+        strcpy(prev, getcwd(NULL, PATH_MAX+1));
+
+        if(chdir(tmpPrev) != 0)
+            printf("dosnt not work \n");
+          
+    }else{
+        strcpy(prev, getcwd(NULL, PATH_MAX+1));
+        chdir(args[1]);   
+    }
 }
 
 
