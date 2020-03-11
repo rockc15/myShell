@@ -103,13 +103,23 @@ int sh( int argc, char **argv, char **envp ) {
         // }
     }
 
-
-    for(int j = 0; args[j] != NULL; j++)
+    //doent free if you are using 1
+    for(int j = 1; args[j] != NULL; j++)
         free(args[j]);
+
+    //need to fix
+    while(pathlist->next){
+        free(pathlist->element);
+        pathlist = pathlist->next;
+    }   
+    
+    free(args);
     
     free(prompt);
 
     free(commandline);
+
+    free(pwd);
 
     free(owd);
 
@@ -184,6 +194,7 @@ void list ( char **dir ) {
 void printWorkingDir() {
     char * pwd = getcwd(NULL, PATH_MAX+1);
     printf("%s \n", pwd);
+    free(pwd);
 }
 
 /* Prints the process id of the shell */
@@ -193,22 +204,24 @@ void printPid(){
 
 void changeDir(char **args, char * prev){   
     char tmpPrev[PATH_MAX];
+    char * cwd= getcwd(NULL, PATH_MAX+1);
 
     if(args[1] == NULL){
-        strcpy(prev, getcwd(NULL, PATH_MAX+1));
+        strcpy(prev, cwd);
         chdir(getenv("HOME"));
         return;
     }else if(strcmp(args[1], "-") == 0) {
         strcpy(tmpPrev, prev);
-        strcpy(prev, getcwd(prev, PATH_MAX+1));
+        strcpy(prev, cwd);
 
         if(chdir(tmpPrev) != 0)
             printf("dosnt not work \n");
           
     }else{
-        strcpy(prev, getcwd(NULL, PATH_MAX+1));
+        strcpy(prev, cwd);
         chdir(args[1]);   
     }
+    free(cwd);
 }
 
 void killProcess(char ** args){
