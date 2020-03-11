@@ -148,7 +148,6 @@ void list ( char **dir ) {
         directory = opendir(".");
     } else {
 
-
         
         /* possible iterate and only print the file name */ 
        if((directory = opendir(dir[1])) == NULL){
@@ -178,6 +177,7 @@ void printPid(){
 void changeDir(char **args, char * prev){   
     char * tmpPrev;
 
+    //if there a no args 
     if(args[1] == NULL){
         strcpy(prev, getcwd(NULL, PATH_MAX+1));
         chdir(getenv("HOME"));
@@ -215,7 +215,7 @@ void killProcess(char ** args){
             strncat(sig, &args[1][i], 1);
             i++;
         }
-        
+
         if(!sig){
             if(!kill(atoi(args[2]), atoi(sig)))
                 printf("your process was not killed \n");
