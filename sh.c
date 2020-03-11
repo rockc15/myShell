@@ -37,7 +37,7 @@ int sh( int argc, char **argv, char **envp ) {
     
     while ( go ) {
         /* print your prompt */
-        printf("cashelll>");
+        printf("myShell$ ");
 
         /* get command line and process */
         fgets(cmdBuffer, MAXLINE, stdin);
@@ -77,6 +77,8 @@ int sh( int argc, char **argv, char **envp ) {
             printPid();
         }else if(strcmp("cd", args[0]) == 0){ 
             changeDir(args, prev);
+        }else if(strcmp("kill", args[0]) == 0){
+            killProcess(args);
         }
     
 
@@ -192,6 +194,40 @@ void changeDir(char **args, char * prev){
         strcpy(prev, getcwd(NULL, PATH_MAX+1));
         chdir(args[1]);   
     }
+}
+
+void killProcess(char ** args){
+    char * dash;
+    char sig[100];
+
+    //no args
+    if(!args[1]){
+        printf("Add a process to kill \n");
+        return;
+    }
+
+    //killing with flags and pid
+    dash = strstr(args[1], "-");
+    if(strcmp(args[1], dash) == 0){
+        printf("ypoooooo");
+        int i = 1;
+        while(args[1][i]){
+            strncat(sig, &args[1][i], 1);
+            i++;
+        }
+        
+        if(!sig){
+            if(!kill(atoi(args[2]), atoi(sig)))
+                printf("your process was not killed \n");
+        }else{
+            printf("Add a process to kill \n");
+        }
+        return;
+    }
+    
+    //killing with just pid
+    if(!kill(atoi(args[1]), SIGTERM))
+        printf("your process was not killed \n");
 }
 
 

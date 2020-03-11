@@ -22,6 +22,7 @@ void printWorkingDir();
 void printenv(char **envp);
 void printPid();
 void changeDir(char ** args, char * preve);
+void killProcess(char ** args);
 
 #define PROMPTMAX 32
 #define MAXARGS 10
