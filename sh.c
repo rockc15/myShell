@@ -102,6 +102,17 @@ int sh( int argc, char **argv, char **envp ) {
         //     fprintf(stderr, "%s: Command not found.\n", args[0]);
         // }
     }
+
+
+    for(int j = 0; args[j] != NULL; j++)
+        free(args[j]);
+    
+    free(prompt);
+
+    free(commandline);
+
+    free(owd);
+
   return 0;
 } 
 
@@ -181,17 +192,15 @@ void printPid(){
 }
 
 void changeDir(char **args, char * prev){   
-    char * tmpPrev;
+    char tmpPrev[PATH_MAX];
 
-    //if there a no args 
     if(args[1] == NULL){
         strcpy(prev, getcwd(NULL, PATH_MAX+1));
         chdir(getenv("HOME"));
         return;
     }else if(strcmp(args[1], "-") == 0) {
-    
         strcpy(tmpPrev, prev);
-        strcpy(prev, getcwd(NULL, PATH_MAX+1));
+        strcpy(prev, getcwd(prev, PATH_MAX+1));
 
         if(chdir(tmpPrev) != 0)
             printf("dosnt not work \n");
