@@ -7,21 +7,22 @@
 int sh( int argc, char **argv, char **envp ) {
     char *prompt = calloc(PROMPTMAX, sizeof(char));
     char *commandline = calloc(MAX_CANON, sizeof(char));
-    char *command, *arg, *commandpath, *p, *pwd, *owd;
     char **args = calloc(MAXARGS, sizeof(char*));
-    int uid, i, status, argsct, go = 1;
+    char * token, *pwd, *owd;
+    char * prev = getcwd(NULL, PATH_MAX+1);
+    int uid, go =1;
     struct passwd *password_entry;
     char *homedir;
     struct pathelement *pathlist;
-    char * token;
-    char * prev = getcwd(NULL, PATH_MAX+1);
 
-    char cmdBuffer[MAXLINE];
+    // char *command, *arg, *commandpath, *p, *pwd, *owd;
+    // int uid, i, status, argsct, go = 1;
+
 
     uid = getuid();
-    password_entry = getpwuid(uid);               /* get passwd info */
+    password_entry = getpwuid(uid);         /* get passwd info */
     homedir = password_entry->pw_dir;		/* Home directory to start
-                            out with*/
+                                            out with*/
         
     if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL ){
         perror("getcwd");
@@ -34,21 +35,24 @@ int sh( int argc, char **argv, char **envp ) {
     /* Put PATH into a linked list */
     pathlist = get_path();
 
+
+    strcpy(prompt, "myShell$ ");
+
     
     while ( go ) {
         /* print your prompt */
-        printf("myShell$ ");
+        printf("%s", prompt);
 
         /* get command line and process */
-        fgets(cmdBuffer, MAXLINE, stdin);
+        fgets(commandline, MAXLINE, stdin);
         
         /* removes the newline char from cmdBuffer */ 
-        int len = strlen(cmdBuffer);
-        cmdBuffer[len - 1] = '\0';
+        int len = strlen(commandline);
+        commandline[len - 1] = '\0';
 
 
         /* Tokenizes the cmdBuffer*/
-        token = strtok(cmdBuffer, " ");
+        token = strtok(commandline, " ");
 
         /* reads the token into args */
         int argsIndex = 0;
@@ -61,7 +65,7 @@ int sh( int argc, char **argv, char **envp ) {
         
     
 
-        /* check for each builiuft in command and implement */
+        /* check for each built-in in command and implement */
         if(strcmp("exit",args[0]) == 0){
             printf("exiting....\n");
             go = 0;
@@ -69,23 +73,25 @@ int sh( int argc, char **argv, char **envp ) {
             which(args[1], pathlist);
         }else if(strcmp("where", args[0]) == 0){
             where(args[1], pathlist);
-        } else if(strcmp("ls", args[0]) == 0){
+        }else if(strcmp("ls", args[0]) == 0){
             list(args);
-        } else if(strcmp("pwd", args[0]) == 0){
+        }else if(strcmp("pwd", args[0]) == 0){
             printWorkingDir();
-        } else if(strcmp("pid", args[0]) == 0){
+        }else if(strcmp("pid", args[0]) == 0){
             printPid();
         }else if(strcmp("cd", args[0]) == 0){ 
             changeDir(args, prev);
         }else if(strcmp("kill", args[0]) == 0){
             killProcess(args);
+        }else if(strcmp("prompt", args[0]) == 0){
+            changePrompt(prompt, args[1]);
+        }else if(strcmp("printenv", args[0]) == 0){
+            printEnv(envp, args);
+        }else if(strcmp("printenv", args[0]) == 0){
+            setEnv(envp, args);
         }
     
-
-// prev = getcwd(NULL, PATH_MAX+1);
-        
     
-
         /*  else  program to exec */
         //{
         /* find it */
@@ -97,7 +103,7 @@ int sh( int argc, char **argv, char **envp ) {
         // }
     }
   return 0;
-} /* sh() */
+} 
 
 
 /* loop through pathlist until finding command and return it.  Return
@@ -230,5 +236,42 @@ void killProcess(char ** args){
         printf("your process was not killed \n");
 }
 
+
+void changePrompt(char * pro, char * args1){
+    char promptBuf[MAXLINE];
+    strcpy(pro, " myShell$ ");
+
+    if(!args1){
+        printf("  input new prompt> ");
+        fgets(promptBuf, MAXLINE, stdin);
+        int len = strlen(promptBuf);
+        promptBuf[len - 1] = ' ';
+        strcat(promptBuf, pro);
+        strcpy(pro, promptBuf);
+    }else{
+        strcat(args1, pro);
+        strcpy(pro, args1);
+    }
+}
+
+
+void printEnv(char **envp, char ** args){
+    if(!args[1]){
+        for(int i = 0; envp[i] != NULL; i++)
+            printf("%s\n",envp[i]);
+    }else{
+            if(!args[2])
+                printf("%s \n", getenv(args[1]));
+            else
+                printf("printenv: to many arguments \n");
+    }   
+}
+
+void setEnv(char **envp, char **args){
+    if(!args[1]){
+        for(int i = 0; envp[i] != NULL; i++)
+            printf("%s\n",envp[i]);
+    }
+}
 
 
