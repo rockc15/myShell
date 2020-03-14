@@ -87,8 +87,21 @@ int sh( int argc, char **argv, char **envp ) {
             changePrompt(prompt, args[1]);
         }else if(strcmp("printenv", args[0]) == 0){
             printEnv(envp, args);
-        }else if(strcmp("printenv", args[0]) == 0){
+        }else if(strcmp("setenv", args[0]) == 0){
             setEnv(envp, args);
+        }else {
+
+            if ((pid = fork()) < 0) {
+			    printf("fork error\n");
+			    exit(1);
+            }else if(pid == 0){
+                
+            }
+
+
+
+
+
         }
     
     
@@ -289,11 +302,32 @@ void printEnv(char **envp, char ** args){
     }   
 }
 
+
+//fixme
 void setEnv(char **envp, char **args){
+    char * enbuf = malloc(20);
     if(!args[1]){
+        printf("here1");
         for(int i = 0; envp[i] != NULL; i++)
             printf("%s\n",envp[i]);
+
+    }else if(args[3]){
+
+        printf("You have to many args");
+
+    }else if(args[1] && args[2]){
+        strcpy(enbuf, args[1]);
+
+        setenv(enbuf, args[2], 1);
+
+        for(int i = 0; envp[i] != NULL; i++)
+            printf("%s\n",envp[i]);
+
+        
+
+        
     }
+    
 }
 
 
