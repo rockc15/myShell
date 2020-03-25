@@ -10,10 +10,12 @@ int sh( int argc, char **argv, char **envp ) {
     char **args = calloc(MAXARGS, sizeof(char*));
     char * token, *pwd, *owd;
     char * prev = getcwd(NULL, PATH_MAX+1);
-    int uid, go =1;
+    int uid, status, go =1;
     struct passwd *password_entry;
     char *homedir;
     struct pathelement *pathlist;
+    pid_t pid; 
+    
 
     // char *command, *arg, *commandpath, *p, *pwd, *owd;
     // int uid, i, status, argsct, go = 1;
@@ -89,31 +91,23 @@ int sh( int argc, char **argv, char **envp ) {
             printEnv(envp, args);
         }else if(strcmp("setenv", args[0]) == 0){
             setEnv(envp, args);
-        }else {
+        }else{
 
             if ((pid = fork()) < 0) {
 			    printf("fork error\n");
 			    exit(1);
             }else if(pid == 0){
+                execve(commandline, args, envp);
+                printf("couldn't execute: %s \n", commandline);
+                exit(127);
                 
             }
 
+            if ((pid = waitpid(pid, &status, 0)) < 0)
+			    printf("waitpid error\n");
 
 
-
-
-        }
-    
-    
-        /*  else  program to exec */
-        //{
-        /* find it */
-        /* do fork(), execve() and waitpid() */
-        // if(1){
-
-        // } else {
-        //     fprintf(stderr, "%s: Command not found.\n", args[0]);
-        // }
+        }        
     }
 
     //doent free if you are using 1
