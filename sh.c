@@ -37,13 +37,12 @@ int sh( int argc, char **argv, char **envp ) {
     pathlist = get_path();
 
 
-    strcpy(prompt, "myShell$ ");
 
     
     while ( go ) {
         char *commandline = calloc(MAX_CANON, sizeof(char));
         /* print your prompt */
-        printf("%s", prompt);
+        printf("%s[%s]> ", prompt, getcwd(NULL, PATH_MAX+1));
 
         // commandline = NULL;
         
@@ -116,10 +115,8 @@ int sh( int argc, char **argv, char **envp ) {
                             exit(127);
                         }
                     } else {
-
                         char cmd[128];
 
-                        //seach for the command in the path 
                         while( pathlist ){
                             sprintf(cmd, "%s/%s", pathlist->element, commandline);
                             if(access(cmd, X_OK) == 0){
@@ -132,15 +129,6 @@ int sh( int argc, char **argv, char **envp ) {
                         }
                         exit(127);
                     }
-
-
-
-
-
-
-
-
-                    
                 }
 
                 if ((pid = waitpid(pid, &status, 0)) < 0)
@@ -311,7 +299,7 @@ void killProcess(char ** args){
 
 void changePrompt(char * pro, char * args1){
     char promptBuf[MAXLINE];
-    strcpy(pro, " myShell$ ");
+    
 
     if(!args1){
         printf("  input new prompt> ");
