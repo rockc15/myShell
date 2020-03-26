@@ -6,7 +6,6 @@
 
 int sh( int argc, char **argv, char **envp ) {
     char *prompt = calloc(PROMPTMAX, sizeof(char));
-    char *commandline = calloc(MAX_CANON, sizeof(char));
     char **args = calloc(MAXARGS, sizeof(char*));
     char * token, *pwd, *owd;
     char * prev = getcwd(NULL, PATH_MAX+1);
@@ -20,7 +19,7 @@ int sh( int argc, char **argv, char **envp ) {
     // char *command, *arg, *commandpath, *p, *pwd, *owd;
     // int uid, i, status, argsct, go = 1;
 
-
+    
     uid = getuid();
     password_entry = getpwuid(uid);         /* get passwd info */
     homedir = password_entry->pw_dir;		/* Home directory to start
@@ -42,72 +41,115 @@ int sh( int argc, char **argv, char **envp ) {
 
     
     while ( go ) {
+        char *commandline = calloc(MAX_CANON, sizeof(char));
         /* print your prompt */
         printf("%s", prompt);
+
+        // commandline = NULL;
+        
 
         /* get command line and process */
         fgets(commandline, MAXLINE, stdin);
         
-        /* removes the newline char from cmdBuffer */ 
-        int len = strlen(commandline);
-        commandline[len - 1] = '\0';
+        if( strcmp(commandline, "\0") == 0 ){
+            printf("Use exit to leave the shell \n");
+        }else if(strcmp(commandline, "\n") != 0 ){
+            
+            /* removes the newline char from cmdBuffer */ 
+            int len = strlen(commandline);
+            commandline[len - 1] = '\0';
 
 
-        /* Tokenizes the cmdBuffer*/
-        token = strtok(commandline, " ");
+            /* Tokenizes the cmdBuffer*/
+            token = strtok(commandline, " ");
 
-        /* reads the token into args */
-        int argsIndex = 0;
-        while(token != NULL){
-            args[argsIndex] = token;
-            argsIndex++;
-            token = strtok(NULL, " ");
-        }
-        args[argsIndex] = NULL;
-        
-    
-
-        /* check for each built-in in command and implement */
-        if(strcmp("exit",args[0]) == 0){
-            printf("exiting....\n");
-            go = 0;
-        }else if(strcmp("which",args[0]) == 0){
-            which(args[1], pathlist);
-        }else if(strcmp("where", args[0]) == 0){
-            where(args[1], pathlist);
-        }else if(strcmp("ls", args[0]) == 0){
-            list(args);
-        }else if(strcmp("pwd", args[0]) == 0){
-            printWorkingDir();
-        }else if(strcmp("pid", args[0]) == 0){
-            printPid();
-        }else if(strcmp("cd", args[0]) == 0){ 
-            changeDir(args, prev);
-        }else if(strcmp("kill", args[0]) == 0){
-            killProcess(args);
-        }else if(strcmp("prompt", args[0]) == 0){
-            changePrompt(prompt, args[1]);
-        }else if(strcmp("printenv", args[0]) == 0){
-            printEnv(envp, args);
-        }else if(strcmp("setenv", args[0]) == 0){
-            setEnv(envp, args);
-        }else{
-
-            if ((pid = fork()) < 0) {
-			    printf("fork error\n");
-			    exit(1);
-            }else if(pid == 0){
-                execve(commandline, args, envp);
-                printf("couldn't execute: %s \n", commandline);
-                exit(127);
-                
+            /* reads the token into args */
+            int argsIndex = 0;
+            while(token != NULL){
+                args[argsIndex] = token;
+                argsIndex++;
+                token = strtok(NULL, " ");
             }
+            args[argsIndex] = NULL;
+            
+        
 
-            if ((pid = waitpid(pid, &status, 0)) < 0)
-			    printf("waitpid error\n");
+            /* check for each built-in in command and implement */
+            if(strcmp("exit",args[0]) == 0){
+                printf("exiting....\n");
+                go = 0;
+            }else if(strcmp("which",args[0]) == 0){
+                which(args[1], pathlist);
+            }else if(strcmp("where", args[0]) == 0){
+                where(args[1], pathlist);
+            }else if(strcmp("list", args[0]) == 0){
+                list(args);
+            }else if(strcmp("pwd", args[0]) == 0){
+                printWorkingDir();
+            }else if(strcmp("pid", args[0]) == 0){
+                printPid();
+            }else if(strcmp("cd", args[0]) == 0){ 
+                changeDir(args, prev);
+            }else if(strcmp("kill", args[0]) == 0){
+                killProcess(args);
+            }else if(strcmp("prompt", args[0]) == 0){
+                changePrompt(prompt, args[1]);
+            }else if(strcmp("printenv", args[0]) == 0){
+                printEnv(envp, args);
+            }else if(strcmp("setenv", args[0]) == 0){
+                setEnv(envp, args);
+            }else{
+
+                if ((pid = fork()) < 0) {
+                    printf("fork error\n");
+                    exit(1);
+                }else if(pid == 0){
+                    
+                    //check for absolute path
+                    if(commandline[0] == '/' || commandline[0] =='.'){
+                        if (access(commandline, X_OK ) == 0){
+                            execve(commandline, args, envp);
+                            printf("couldn't execute: %s \n", commandline);
+                            exit(127);
+                        }else {
+                            printf("mysh: %s Permission Denied \n", commandline);
+                            exit(127);
+                        }
+                    } else {
+
+                        char cmd[128];
+
+                        //seach for the command in the path 
+                        while( pathlist ){
+                            sprintf(cmd, "%s/%s", pathlist->element, commandline);
+                            if(access(cmd, X_OK) == 0){
+                                execve(cmd, args, envp);
+                                printf("couldn't execute: %s \n", commandline);
+                                exit(127);
+                                break;
+                            }
+                            pathlist = pathlist->next;
+                        }
+                        exit(127);
+                    }
 
 
-        }        
+
+
+
+
+
+
+                    
+                }
+
+                if ((pid = waitpid(pid, &status, 0)) < 0)
+                    printf("waitpid error\n");
+
+
+            }        
+        }
+        free(commandline);
     }
 
     //doent free if you are using 1
@@ -115,16 +157,17 @@ int sh( int argc, char **argv, char **envp ) {
         free(args[j]);
 
     //need to fix
-    while(pathlist->next){
-        free(pathlist->element);
-        pathlist = pathlist->next;
-    }   
+    // while(pathlist){
+
+    //     free(pathlist->element);
+    //     pathlist = pathlist->next;
+    // }   
     
     free(args);
     
     free(prompt);
 
-    free(commandline);
+    
 
     free(pwd);
 
