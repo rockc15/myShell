@@ -14,6 +14,8 @@ int sh( int argc, char **argv, char **envp ) {
     char *homedir;
     struct pathelement *pathlist;
     pid_t pid; 
+    glob_t paths;
+
     
 
     // char *command, *arg, *commandpath, *p, *pwd, *owd;
@@ -42,10 +44,7 @@ int sh( int argc, char **argv, char **envp ) {
     while ( go ) {
         char *commandline = calloc(MAX_CANON, sizeof(char));
         /* print your prompt */
-        printf("%s[%s]> ", prompt, getcwd(NULL, PATH_MAX+1));
-
-        // commandline = NULL;
-        
+        printf("%s[%s]> ", prompt, getcwd(NULL, PATH_MAX+1));        
 
         /* get command line and process */
         fgets(commandline, MAXLINE, stdin);
@@ -78,24 +77,34 @@ int sh( int argc, char **argv, char **envp ) {
                 printf("exiting....\n");
                 go = 0;
             }else if(strcmp("which",args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 which(args[1], pathlist);
             }else if(strcmp("where", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 where(args[1], pathlist);
             }else if(strcmp("list", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 list(args);
             }else if(strcmp("pwd", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 printWorkingDir();
             }else if(strcmp("pid", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 printPid();
             }else if(strcmp("cd", args[0]) == 0){ 
+                printf("Executing built-in %s \n", args[0]);
                 changeDir(args, prev);
             }else if(strcmp("kill", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 killProcess(args);
             }else if(strcmp("prompt", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 changePrompt(prompt, args[1]);
             }else if(strcmp("printenv", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 printEnv(envp, args);
             }else if(strcmp("setenv", args[0]) == 0){
+                printf("Executing built-in %s \n", args[0]);
                 setEnv(envp, args);
             }else{
 
@@ -107,6 +116,7 @@ int sh( int argc, char **argv, char **envp ) {
                     //check for absolute path
                     if(commandline[0] == '/' || commandline[0] =='.'){
                         if (access(commandline, X_OK ) == 0){
+
                             execve(commandline, args, envp);
                             printf("couldn't execute: %s \n", commandline);
                             exit(127);
@@ -120,6 +130,27 @@ int sh( int argc, char **argv, char **envp ) {
                         while( pathlist ){
                             sprintf(cmd, "%s/%s", pathlist->element, commandline);
                             if(access(cmd, X_OK) == 0){
+                                char **p;
+                                int globStatus = -1;
+                                for(int i = 1; args[i] != NULL; i++){
+                                    globStatus = glob(args[i], 0 , NULL, &paths);
+                                    
+
+                                   if(globStatus == 0){
+                                       for (p = paths.gl_pathv; *p != NULL; ++p){
+                                           printf("%s ", *p); 
+                                       }
+
+                                        execve(cmd, &paths.gl_pathv[0], envp);
+                                        break;
+                                    }
+
+                                }
+
+                                for(int i = 0; args[i] != NULL; i++)
+                                     printf("%s\n",args[i]);  
+
+                                printf("Executing %s \n", cmd);
                                 execve(cmd, args, envp);
                                 printf("couldn't execute: %s \n", commandline);
                                 exit(127);
@@ -154,8 +185,6 @@ int sh( int argc, char **argv, char **envp ) {
     free(args);
     
     free(prompt);
-
-    
 
     free(pwd);
 
@@ -347,10 +376,6 @@ void setEnv(char **envp, char **args){
 
         for(int i = 0; envp[i] != NULL; i++)
             printf("%s\n",envp[i]);
-
-        
-
-        
     }
     
 }
