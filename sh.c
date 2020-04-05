@@ -15,6 +15,7 @@ int sh( int argc, char **argv, char **envp ) {
     struct pathelement *pathlist;
     pid_t pid; 
     glob_t paths;
+     char ** globArray = malloc(sizeof(args)+sizeof(paths.gl_pathv));
 
     
 
@@ -130,27 +131,61 @@ int sh( int argc, char **argv, char **envp ) {
                         while( pathlist ){
                             sprintf(cmd, "%s/%s", pathlist->element, commandline);
                             if(access(cmd, X_OK) == 0){
-                                char **p;
                                 int globStatus = -1;
                                 for(int i = 1; args[i] != NULL; i++){
                                     globStatus = glob(args[i], 0 , NULL, &paths);
                                     
-
+                                
                                    if(globStatus == 0){
-                                       for (p = paths.gl_pathv; *p != NULL; ++p){
-                                           printf("%s ", *p); 
-                                       }
+                                        
+                                        
+                                        int globI = 0;
+                                        for(int j = 0; args[j] != NULL; j++){
+                                            globArray[j] = args[j];
+                                            globI++;
+                                        }
+
+                                        globI--;
+                                        for( int i = 0 ; paths.gl_pathv[i] != NULL; i++){
+
+                                            globArray[globI] = paths.gl_pathv[i];
+                                            globI++;
+                                        }
+
+                                        //////////////////////////////////////////////////////////////////////////
+                                        //James this is where im stuck globArr has all the wildcards args but will 
+                                        //not exectue
+                                        //////////////////////////////////////////////////////////////////////////
+
+
+                                        // for(int j = 0; globArray[j] != NULL; j++){
+                                        //     printf("%s \n", globArray[j]);
+                                        // }
+
+                                        // for(int j = 0; args[j] != NULL; j++){
+                                        //     printf("%s \n", args[j]);
+                                        // }
+
+                                        for(int j = 0; paths.gl_pathv[j] != NULL; j++){
+                                            printf("%s \n", paths.gl_pathv[i] );
+                                        }
+                                       
+
+                                        printf("this is the cmd: %s " , cmd);
+
+                                        
 
                                         execve(cmd, &paths.gl_pathv[0], envp);
-                                        break;
+                                        printf("Couldn't execute \n");
+                                        exit(127);
                                     }
 
                                 }
 
-                                for(int i = 0; args[i] != NULL; i++)
-                                     printf("%s\n",args[i]);  
-
                                 printf("Executing %s \n", cmd);
+                                for(int j = 0; args[j] != NULL; j++){
+                                            printf("%s \n", args[j]);
+                                        }
                                 execve(cmd, args, envp);
                                 printf("couldn't execute: %s \n", commandline);
                                 exit(127);
