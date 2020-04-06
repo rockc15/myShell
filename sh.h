@@ -26,8 +26,8 @@ void printPid();
 void changeDir(char ** args, char * preve);
 void killProcess(char ** args);
 void changePrompt(char * pro, char * args1);
-void printEnv(char **envp, char **args);
-void setEnv(char **envp, char **args);
+void printEnv(char **args);
+void setEnv(char **args);
 
 #define PROMPTMAX 32
 #define MAXARGS 10
