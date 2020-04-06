@@ -15,18 +15,11 @@ int sh( int argc, char **argv, char **envp ) {
     struct pathelement *pathlist;
     pid_t pid; 
     glob_t paths;
-     char ** globArray = malloc(sizeof(args)+sizeof(paths.gl_pathv));
+    char ** globArray = malloc(sizeof(args)+sizeof(paths.gl_pathv));
 
-    
-
-    // char *command, *arg, *commandpath, *p, *pwd, *owd;
-    // int uid, i, status, argsct, go = 1;
-
-    
     uid = getuid();
-    password_entry = getpwuid(uid);         /* get passwd info */
-    homedir = password_entry->pw_dir;		/* Home directory to start
-                                            out with*/
+    password_entry = getpwuid(uid);        
+    homedir = password_entry->pw_dir;		
         
     if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL ){
         perror("getcwd");
@@ -38,9 +31,6 @@ int sh( int argc, char **argv, char **envp ) {
 
     /* Put PATH into a linked list */
     pathlist = get_path();
-
-
-
     
     while ( go ) {
         char *commandline = calloc(MAX_CANON, sizeof(char));
@@ -53,11 +43,10 @@ int sh( int argc, char **argv, char **envp ) {
         if( strcmp(commandline, "\0") == 0 ){
             printf("Use exit to leave the shell \n");
         }else if(strcmp(commandline, "\n") != 0 ){
-            
+
             /* removes the newline char from cmdBuffer */ 
             int len = strlen(commandline);
             commandline[len - 1] = '\0';
-
 
             /* Tokenizes the cmdBuffer*/
             token = strtok(commandline, " ");
@@ -71,8 +60,6 @@ int sh( int argc, char **argv, char **envp ) {
             }
             args[argsIndex] = NULL;
             
-        
-
             /* check for each built-in in command and implement */
             if(strcmp("exit",args[0]) == 0){
                 printf("exiting....\n");
@@ -108,21 +95,18 @@ int sh( int argc, char **argv, char **envp ) {
                 printf("Executing built-in %s \n", args[0]);
                 setEnv(envp, args);
             }else{
-
                 if ((pid = fork()) < 0) {
-                    printf("fork error\n");
+                    perror("Fork Error: ");
                     exit(1);
                 }else if(pid == 0){
-                    
                     //check for absolute path
                     if(commandline[0] == '/' || commandline[0] =='.'){
                         if (access(commandline, X_OK ) == 0){
-
                             execve(commandline, args, envp);
-                            printf("couldn't execute: %s \n", commandline);
+                            perror("Could Not Execute: ");
                             exit(127);
                         }else {
-                            printf("mysh: %s Permission Denied \n", commandline);
+                            perror("Could Not Execute: ");
                             exit(127);
                         }
                     } else {
@@ -131,63 +115,36 @@ int sh( int argc, char **argv, char **envp ) {
                         while( pathlist ){
                             sprintf(cmd, "%s/%s", pathlist->element, commandline);
                             if(access(cmd, X_OK) == 0){
+                                
+
+                                /* Handles Wildcards */
                                 int globStatus = -1;
                                 for(int i = 1; args[i] != NULL; i++){
                                     globStatus = glob(args[i], 0 , NULL, &paths);
-                                    
                                 
                                    if(globStatus == 0){
-                                        
-                                        
                                         int globI = 0;
                                         for(int j = 0; args[j] != NULL; j++){
                                             globArray[j] = args[j];
                                             globI++;
                                         }
-
                                         globI--;
                                         for( int i = 0 ; paths.gl_pathv[i] != NULL; i++){
-
                                             globArray[globI] = paths.gl_pathv[i];
                                             globI++;
                                         }
+                                        globArray[globI] = NULL;
 
-                                        //////////////////////////////////////////////////////////////////////////
-                                        //James this is where im stuck globArr has all the wildcards args but will 
-                                        //not exectue
-                                        //////////////////////////////////////////////////////////////////////////
-
-
-                                        // for(int j = 0; globArray[j] != NULL; j++){
-                                        //     printf("%s \n", globArray[j]);
-                                        // }
-
-                                        // for(int j = 0; args[j] != NULL; j++){
-                                        //     printf("%s \n", args[j]);
-                                        // }
-
-                                        for(int j = 0; paths.gl_pathv[j] != NULL; j++){
-                                            printf("%s \n", paths.gl_pathv[i] );
-                                        }
-                                       
-
-                                        printf("this is the cmd: %s " , cmd);
-
-                                        
-
-                                        execve(cmd, &paths.gl_pathv[0], envp);
-                                        printf("Couldn't execute \n");
+                                        execve(cmd, globArray, envp);
+                                        perror("Could Not Execute: ");
                                         exit(127);
                                     }
 
                                 }
 
                                 printf("Executing %s \n", cmd);
-                                for(int j = 0; args[j] != NULL; j++){
-                                            printf("%s \n", args[j]);
-                                        }
                                 execve(cmd, args, envp);
-                                printf("couldn't execute: %s \n", commandline);
+                                perror("Could Not Execute: ");
                                 exit(127);
                                 break;
                             }
@@ -198,7 +155,7 @@ int sh( int argc, char **argv, char **envp ) {
                 }
 
                 if ((pid = waitpid(pid, &status, 0)) < 0)
-                    printf("waitpid error\n");
+                    perror("Waitpid Error: ");
 
 
             }        
@@ -206,17 +163,19 @@ int sh( int argc, char **argv, char **envp ) {
         free(commandline);
     }
 
-    //doent free if you are using 1
+    //doent free if you are using 
     for(int j = 1; args[j] != NULL; j++)
         free(args[j]);
 
     //need to fix
     // while(pathlist){
-
-    //     free(pathlist->element);
+    //     struct pathelement * temp = pathlist;
     //     pathlist = pathlist->next;
-    // }   
-    
+    //     free(temp->element);
+    //     free(temp);
+
+    // }  
+     
     free(args);
     
     free(prompt);
@@ -268,7 +227,7 @@ char *where(char *command, struct pathelement *pathlist ) {
 } 
 
 
-/* fiegure out how to list specifc files names */
+/* List all the files in a given directory */
 void list ( char **dir ) {
     DIR *directory;
     struct dirent * dirInfo;
@@ -277,10 +236,9 @@ void list ( char **dir ) {
         directory = opendir(".");
     } else {
 
-        
-        /* possible iterate and only print the file name */ 
+    
        if((directory = opendir(dir[1])) == NULL){
-          printf("can't open %s \n", dir[1]);
+            perror("Could Not Open: ");
           return;
        }
     }
@@ -304,6 +262,7 @@ void printPid(){
     printf("%d \n", getpid());
 }
 
+/* Change into a directory */
 void changeDir(char **args, char * prev){   
     char tmpPrev[PATH_MAX];
     char * cwd= getcwd(NULL, PATH_MAX+1);
@@ -317,7 +276,7 @@ void changeDir(char **args, char * prev){
         strcpy(prev, cwd);
 
         if(chdir(tmpPrev) != 0)
-            printf("dosnt not work \n");
+            perror("Could Not change Dir: ");
           
     }else{
         strcpy(prev, cwd);
@@ -326,6 +285,7 @@ void changeDir(char **args, char * prev){
     free(cwd);
 }
 
+/* Kills a processes */
 void killProcess(char ** args){
     char * dash;
     char sig[100];
@@ -339,7 +299,6 @@ void killProcess(char ** args){
     //killing with flags and pid
     dash = strstr(args[1], "-");
     if(strcmp(args[1], dash) == 0){
-        printf("ypoooooo");
         int i = 1;
         while(args[1][i]){
             strncat(sig, &args[1][i], 1);
@@ -348,7 +307,7 @@ void killProcess(char ** args){
 
         if(!sig){
             if(!kill(atoi(args[2]), atoi(sig)))
-                printf("your process was not killed \n");
+                perror("Could Not Kill Process: ");
         }else{
             printf("Add a process to kill \n");
         }
@@ -357,13 +316,12 @@ void killProcess(char ** args){
     
     //killing with just pid
     if(!kill(atoi(args[1]), SIGTERM))
-        printf("your process was not killed \n");
+        perror("Process not killed: ");
 }
 
-
+/* chagnes the command line prompt */
 void changePrompt(char * pro, char * args1){
     char promptBuf[MAXLINE];
-    
 
     if(!args1){
         printf("  input new prompt> ");
@@ -378,7 +336,7 @@ void changePrompt(char * pro, char * args1){
     }
 }
 
-
+/* Prints the enviorment */
 void printEnv(char **envp, char ** args){
     if(!args[1]){
         for(int i = 0; envp[i] != NULL; i++)
@@ -394,23 +352,21 @@ void printEnv(char **envp, char ** args){
 
 //fixme
 void setEnv(char **envp, char **args){
-    char * enbuf = malloc(20);
+    char * enbuf;
     if(!args[1]){
-        printf("here1");
         for(int i = 0; envp[i] != NULL; i++)
             printf("%s\n",envp[i]);
-
     }else if(args[3]){
-
         printf("You have to many args");
-
     }else if(args[1] && args[2]){
         strcpy(enbuf, args[1]);
-
+        puts(enbuf);
         setenv(enbuf, args[2], 1);
 
         for(int i = 0; envp[i] != NULL; i++)
             printf("%s\n",envp[i]);
+    }else {
+        setenv(enbuf, args[2], 1);
     }
     
 }

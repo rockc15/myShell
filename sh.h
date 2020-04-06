@@ -12,6 +12,7 @@
 #include <linux/limits.h>
 #include <glob.h>
 #include "get_path.h"
+// #include <errno.h>
 
 
 int pid;
