@@ -15,10 +15,12 @@ int sh( int argc, char **argv, char **envp ) {
     struct pathelement *pathlist;
     pid_t pid; 
     glob_t paths;
-    char ** globArray = malloc(sizeof(args)+sizeof(paths.gl_pathv));
+    char ** globArray = calloc(MAXARGS, sizeof(args)+sizeof(paths.gl_pathv));
 
     uid = getuid();
-    password_entry = getpwuid(uid);        
+    password_entry = getpwuid(uid);    
+
+    //free-----------------------------------------------------------    
     homedir = password_entry->pw_dir;		
         
     if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL ){
@@ -35,8 +37,10 @@ int sh( int argc, char **argv, char **envp ) {
     while ( go ) {
         char *commandline = calloc(MAX_CANON, sizeof(char));
         /* print your prompt */
-        printf("%s[%s]> ", prompt, getcwd(NULL, PATH_MAX+1));        
+        char * workingDir = getcwd(NULL, PATH_MAX+1);
+        printf("%s[%s]> ", prompt, workingDir);        
 
+        free(workingDir);
         /* get command line and process */
         fgets(commandline, MAXLINE, stdin);
         
@@ -78,6 +82,7 @@ int sh( int argc, char **argv, char **envp ) {
                 printWorkingDir();
             }else if(strcmp("pid", args[0]) == 0){
                 printf("Executing built-in %s \n", args[0]);
+                //free-------------------------
                 printPid();
             }else if(strcmp("cd", args[0]) == 0){ 
                 printf("Executing built-in %s \n", args[0]);
@@ -171,15 +176,16 @@ int sh( int argc, char **argv, char **envp ) {
     for(int i = 0; globArray[i] != NULL; i++){
         free(globArray[i]);
     }
-    free(globArray);
 
+    free(globArray);
 
     while(pathlist){
         struct pathelement * temp = pathlist;
         pathlist = pathlist->next;
         free(temp);
     }
-     free(pathlist);
+
+    free(pathlist);
 
     free(args);
     
@@ -189,13 +195,15 @@ int sh( int argc, char **argv, char **envp ) {
 
     free(owd);
 
+    free(prev);
+
   return 0;
 } 
 
 
 /* loop through pathlist until finding command and return it.  Return
 NULL when not found. */
-char *which(char *command, struct pathelement *pathlist ) {
+void which(char *command, struct pathelement *pathlist ) {
     char cmd[64];
     if(command == NULL){
         printf("Too few arguments \n");
@@ -215,7 +223,7 @@ char *which(char *command, struct pathelement *pathlist ) {
 
 /* loop through pathlist until finding all commands and return it.  Return
 NULL when not found. */
-char *where(char *command, struct pathelement *pathlist ) {
+void where(char *command, struct pathelement *pathlist ) {
     char cmd[64];
 
     if(command == 0){
