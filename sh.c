@@ -134,7 +134,8 @@ int sh( int argc, char **argv, char **envp ) {
                                             globI++;
                                         }
                                         globArray[globI] = NULL;
-
+                                        
+                                        globfree(&paths);
                                         execve(cmd, globArray, envp);
                                         perror("Could Not Execute: ");
                                         exit(127);
@@ -167,15 +168,19 @@ int sh( int argc, char **argv, char **envp ) {
     for(int j = 1; args[j] != NULL; j++)
         free(args[j]);
 
-    //need to fix
-    // while(pathlist){
-    //     struct pathelement * temp = pathlist;
-    //     pathlist = pathlist->next;
-    //     free(temp->element);
-    //     free(temp);
+    for(int i = 0; globArray[i] != NULL; i++){
+        free(globArray[i]);
+    }
+    free(globArray);
 
-    // }  
-     
+
+    while(pathlist){
+        struct pathelement * temp = pathlist;
+        pathlist = pathlist->next;
+        free(temp);
+    }
+     free(pathlist);
+
     free(args);
     
     free(prompt);
