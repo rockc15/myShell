@@ -2,8 +2,13 @@
 #include "sh.h"
 #define MAXLINE 128
 
-
-
+/**
+ * start a shell.
+ *
+ * @param   argc    number of command line arguments
+ * @param   argv    command line arguments
+ * @param
+ */
 int sh( int argc, char **argv, char **envp ) {
     char *prompt = calloc(PROMPTMAX, sizeof(char));
     char **args = calloc(MAXARGS, sizeof(char*));
@@ -353,7 +358,6 @@ void printEnv(char **envp, char ** args){
                 printf("printenv: to many arguments \n");
     }   
 }
-
 
 //fixme
 void setEnv(char **envp, char **args){

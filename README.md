@@ -65,9 +65,9 @@
      function closes the directory stream associated with dirp. A successful call to closedir() also closes the underlying file descriptor associated with dirp. The directory stream descriptor dirp is not available after this call.
 
 - [x] Exiting
-- [ ] Built in functions
-- [ ] Extermal Functions
-- [ ] Capturing siginals 
-- [ ] Wildcards
-- [ ] flags
+- [x] Built in functions
+- [x] External Functions
+- [x] Capturing siginals 
+- [x] Wildcards
+- [x] flags
 
