@@ -1,9 +1,15 @@
-
 #include "sh.h"
 #define MAXLINE 128
 
-
-
+/**
+ * start a shell.
+ *
+ * @param   argc    number of command line arguments
+ * @param   argv    command line arguments
+ * @param   envp    environmental variables
+ *
+ * @return  status of shell. 0 is fine. all others are errors.
+ */
 int sh( int argc, char **argv, char **envp ) {
     char *prompt = calloc(PROMPTMAX, sizeof(char));
     char **args = calloc(MAXARGS, sizeof(char*));
@@ -202,8 +208,13 @@ int sh( int argc, char **argv, char **envp ) {
 } 
 
 
-/* loop through pathlist until finding command and return it.  Return
-NULL when not found. */
+/** loop through pathlist until finding command and return it.
+ *
+ * @param   command     what command is being searched for.
+ * @param   pathlist    used to find environmental path.
+ *
+ * @return  NULL when not found.
+ */
 void which(char *command, struct pathelement *pathlist ) {
     char cmd[64];
     if(command == NULL){
@@ -222,8 +233,14 @@ void which(char *command, struct pathelement *pathlist ) {
 }
 
 
-/* loop through pathlist until finding all commands and return it.  Return
-NULL when not found. */
+/**
+ * loop through pathlist until finding all commands and return it.
+ *
+ * @param   command     what command is being searched for.
+ * @param   pathlist    used to find environmental path.
+ *
+ * @return  NULL when not found.
+ */
 void where(char *command, struct pathelement *pathlist ) {
     char cmd[64];
 
@@ -241,7 +258,11 @@ void where(char *command, struct pathelement *pathlist ) {
 } 
 
 
-/* List all the files in a given directory */
+/**
+ * list all the files in a given directory.
+ *
+ * @param   dir     directory being listed.
+ */
 void list ( char **dir ) {
     DIR *directory;
     struct dirent * dirInfo;
@@ -264,19 +285,28 @@ void list ( char **dir ) {
     closedir(directory);
 } 
 
-/* Print the current working directory */ 
+/**
+ * print the current working directory.
+ */ 
 void printWorkingDir() {
     char * pwd = getcwd(NULL, PATH_MAX+1);
     printf("%s \n", pwd);
     free(pwd);
 }
 
-/* Prints the process id of the shell */
+/**
+ * prints the process id of the shell.
+ */
 void printPid(){
     printf("%d \n", getpid());
 }
 
-/* Change into a directory */
+/**
+ * change into a directory.
+ *
+ * @param   args    full command line (ex: `cd ...`).
+ * @param   prev    last directory was in. 
+ */
 void changeDir(char **args, char * prev){   
     char tmpPrev[PATH_MAX];
     char * cwd= getcwd(NULL, PATH_MAX+1);
@@ -300,7 +330,11 @@ void changeDir(char **args, char * prev){
     free(cwd);
 }
 
-/* Kills a processes */
+/**
+ * kills a processes.
+ *
+ * @param   args    full command line (ex: `kill ...`).
+ */
 void killProcess(char ** args){
     char * dash;
     char sig[100];
@@ -334,7 +368,12 @@ void killProcess(char ** args){
         perror("Process not killed: ");
 }
 
-/* chagnes the command line prompt */
+/**
+ * changes the command line prompt
+ *
+ * @param   pro     new prompt to be in front of default prompt.
+ * @param   args    full command line (ex: `prompt ...`). 
+ */
 void changePrompt(char * pro, char * args1){
     char promptBuf[MAXLINE];
 
@@ -351,7 +390,12 @@ void changePrompt(char * pro, char * args1){
     }
 }
 
-/* Prints the enviorment */
+/**
+ * prints the environment.
+ *
+ * @param   envp    environmental variables.
+ * @param   args    full command line (ex: `printenv ...`).
+ */
 void printEnv(char **envp, char ** args){
     if(!args[1]){
         for(int i = 0; envp[i] != NULL; i++)
@@ -364,8 +408,12 @@ void printEnv(char **envp, char ** args){
     }   
 }
 
-
-//fixme
+/**
+ * set a update/new environmental variable
+ *
+ * @param   envp    environmental variables.
+ * @param   args    full command line (ex: `setnev ...`).
+ */
 void setEnv(char **envp, char **args){
     char * enbuf;
     if(!args[1]){
