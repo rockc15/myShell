@@ -146,7 +146,6 @@ int sh( int argc, char **argv, char **envp ) {
                                         }
                                         globArray[globI] = NULL;
                                         
-                                        globfree(&paths);
                                         execve(cmd, globArray, envp);
                                         perror("Could Not Execute: ");
                                         exit(127);
@@ -192,6 +191,8 @@ int sh( int argc, char **argv, char **envp ) {
     }
 
     free(pathlist);
+    
+    globfree(&paths);
 
     free(args);
     
@@ -325,6 +326,7 @@ void changeDir(char **args, char * prev){
         strcpy(prev, cwd);
         chdir(args[1]);   
     }
+    
     free(cwd);
 }
 
