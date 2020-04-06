@@ -1,7 +1,7 @@
 # My Shell
 ### Devs
-Casey Rock - rockc15
-James Villemarette - jvillemare
+- Casey Rock - rockc15 
+- James Villemarette - jvillemare
 ---
 
 ## Implemented Built-in Functions
