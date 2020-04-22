@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <linux/limits.h>
 #include <glob.h>
 #include "get_path.h"
 // #include <errno.h>

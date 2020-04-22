@@ -22,11 +22,12 @@ int sh( int argc, char **argv, char **envp ) {
     pid_t pid; 
     glob_t paths;
     char ** globArray = calloc(MAXARGS, sizeof(args)+sizeof(paths.gl_pathv));
+    int background = 0;
 
     uid = getuid();
     password_entry = getpwuid(uid);    
 
-    //free-----------------------------------------------------------    
+  
     homedir = password_entry->pw_dir;		
         
     if ( (pwd = getcwd(NULL, PATH_MAX+1)) == NULL ){
@@ -106,6 +107,15 @@ int sh( int argc, char **argv, char **envp ) {
                 printf("Executing built-in %s \n", args[0]);
                 setEnv(args);
             }else{
+                //determines if there is background process
+                if(strcmp("&", args[argsIndex-1]) == 0){
+                    printf("adding to the backgorund \n");
+                    args[argsIndex-1] = NULL;
+                    background = 1;
+                }else{
+                    background = 0;
+                }
+
                 if ((pid = fork()) < 0) {
                     perror("Fork Error: ");
                     exit(1);
@@ -122,7 +132,6 @@ int sh( int argc, char **argv, char **envp ) {
                         }
                     } else {
                         char cmd[128];
-
                         while( pathlist ){
                             sprintf(cmd, "%s/%s", pathlist->element, commandline);
                             if(access(cmd, X_OK) == 0){
@@ -165,8 +174,11 @@ int sh( int argc, char **argv, char **envp ) {
                     }
                 }
 
-                if ((pid = waitpid(pid, &status, 0)) < 0)
+                if(background){
+                    printf("+[%d]\n", pid);
+                }else if ((pid = waitpid(pid, &status, 0)) < 0){
                     perror("Waitpid Error: ");
+                }
 
 
             }        
