@@ -11,7 +11,9 @@
 #include <signal.h>
 #include <glob.h>
 #include "get_path.h"
-// #include <errno.h>
+#include <utmpx.h>
+#include <pthread.h>
+
 
 
 int pid;
@@ -27,6 +29,7 @@ void killProcess(char ** args);
 void changePrompt(char * pro, char * args1);
 void printEnv(char **args);
 void setEnv(char **args);
+void watchUser(char ** args);
 
 #define PROMPTMAX 32
 #define MAXARGS 10

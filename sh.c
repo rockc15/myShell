@@ -1,6 +1,9 @@
 #include "sh.h"
 #define MAXLINE 128
 extern char **environ;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
+struct utmpx * up;
+
 /**
  * start a shell.
  *
@@ -23,6 +26,9 @@ int sh( int argc, char **argv, char **envp ) {
     glob_t paths;
     char ** globArray = calloc(MAXARGS, sizeof(args)+sizeof(paths.gl_pathv));
     int background = 0;
+
+   
+
 
     uid = getuid();
     password_entry = getpwuid(uid);    
@@ -89,7 +95,6 @@ int sh( int argc, char **argv, char **envp ) {
                 printWorkingDir();
             }else if(strcmp("pid", args[0]) == 0){
                 printf("Executing built-in %s \n", args[0]);
-                //free-------------------------
                 printPid();
             }else if(strcmp("cd", args[0]) == 0){ 
                 printf("Executing built-in %s \n", args[0]);
@@ -106,7 +111,11 @@ int sh( int argc, char **argv, char **envp ) {
             }else if(strcmp("setenv", args[0]) == 0){
                 printf("Executing built-in %s \n", args[0]);
                 setEnv(args);
-            }else{
+            }else if (strcmp("watchuser", args[0]) == 0){
+                 printf("Executing built-in %s \n", args[0]);
+                 watchUser(args);
+            } else{
+
                 //determines if there is background process
                 if(strcmp("&", args[argsIndex-1]) == 0){
                     printf("adding to the backgorund \n");
@@ -135,8 +144,6 @@ int sh( int argc, char **argv, char **envp ) {
                         while( pathlist ){
                             sprintf(cmd, "%s/%s", pathlist->element, commandline);
                             if(access(cmd, X_OK) == 0){
-                                
-
                                 /* Handles Wildcards */
                                 int globStatus = -1;
                                 for(int i = 1; args[i] != NULL; i++){
@@ -174,7 +181,7 @@ int sh( int argc, char **argv, char **envp ) {
                     }
                 }
 
-                if(background){
+                if(background){ //if background is true the parent won't wait for the child 
                     printf("+[%d]\n", pid);
                 }else if ((pid = waitpid(pid, &status, 0)) < 0){
                     perror("Waitpid Error: ");
@@ -186,7 +193,6 @@ int sh( int argc, char **argv, char **envp ) {
         free(commandline);
     }
 
-    //doent free if you are using 
     for(int j = 1; args[j] != NULL; j++)
         free(args[j]);
 
@@ -444,4 +450,15 @@ void setEnv(char **args){
     free(enbuf);
 }
 
+
+void watchUser(char ** args){
+  setutxent();			/* start at beginning */
+  while (up = getutxent()){	/* get an entry */
+    if ( up->ut_type == USER_PROCESS )	/* only care about users */
+    {
+      printf("%s has logged on %s from %s\n", up->ut_user, up->ut_line, up ->ut_host);
+    }
+  }
+
+}
 
