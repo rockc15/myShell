@@ -2,7 +2,21 @@
 #define MAXLINE 128
 extern char **environ;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
-struct utmpx * up;
+
+
+void *user(void * arg){
+    pthread_mutex_lock(&lock);
+    printf("%s \n", arg);
+    struct utmpx * up;
+    setutxent();
+    while (up = getutxent()){	/* get an entry */
+        if ( up->ut_type == USER_PROCESS ){
+            printf("%s has logged on %s from %s\n", up->ut_user, up->ut_line, up->ut_host);
+        }
+    }
+    pthread_mutex_unlock(&lock);
+}
+
 
 /**
  * start a shell.
@@ -452,13 +466,12 @@ void setEnv(char **args){
 
 
 void watchUser(char ** args){
-  setutxent();			/* start at beginning */
-  while (up = getutxent()){	/* get an entry */
-    if ( up->ut_type == USER_PROCESS )	/* only care about users */
-    {
-      printf("%s has logged on %s from %s\n", up->ut_user, up->ut_line, up ->ut_host);
-    }
-  }
+    pthread_t p;
+    int m;
+
+    pthread_create(&p, NULL, user, (void*) args[1]);
+    pthread_join(p, (void** ) &m);
+    printf("returned %d \n", m);
 
 }
 
