@@ -132,8 +132,6 @@ int sh( int argc, char **argv, char **envp ) {
 
                 //determines if there is background process
                 if(backGround(args)){
-                    printf("adding to the backgorund \n");
-                    args[argsIndex-1] = NULL;
                     background = 1;
                 }else{
                     background = 0;
@@ -151,9 +149,12 @@ int sh( int argc, char **argv, char **envp ) {
                         if(re == 0)
                             open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
                         else if(re == 1){
+                            //does not append right now 
+                            printf("does the works??????");
                             open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
                         }
                     }
+
                     //check for absolute path
                     if(commandline[0] == '/' || commandline[0] =='.'){
                         if (access(commandline, X_OK ) == 0){
@@ -475,20 +476,27 @@ void setEnv(char **args){
     free(enbuf);
 }
 
+/**
+ *  deterimes if there is a redirection symbol in the command line 
+ * 
+ *  @param   args    full command line (ex: `setnev ...`).
+ */
 int redirection(char ** args){
     for(int i = 0; args[i] != NULL; i++){
+        //append output 
+        if(strstr(args[i], ">>")){
+            printf("yooo thsu su what tim tedt ign ");
+            args[i] = NULL;
+            return 1;
+        }
         //override output 
         if(strstr(args[i], ">")){
             args[i] = NULL;
             return 0;
         }
-        //append output 
-        if(strstr(args[i], ">>")){
-            args[i] = NULL;
-            return 1;
-        }
 
         if(strstr(args[i], "<")){
+            printf("yooo thsu su what tim tedt ign ");
             args[i] = NULL;
             return 2;
         }
