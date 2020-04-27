@@ -211,7 +211,8 @@ int sh( int argc, char **argv, char **envp ) {
                         exit(127);
                     }
                 }
-
+                //
+                waitpid(-1, &status, WNOHANG);
                 if(background){ //if background is true the parent won't wait for the child 
                     printf("+[%d]\n", pid);
                 }else if ((pid = waitpid(pid, &status, 0)) < 0){
