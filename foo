@@ -11,4 +11,19 @@ get_path.o: get_path.c get_path.h
 	$(CC) -g -c get_path.c
 
 clean:
-	rm -rf sh.o get_path.o mysh sleep
+	rm -rf sh.o get_path.o mysh sleepdoes the works??????Executing /bin/ls 
+README.md
+foo
+get_path.c
+get_path.h
+get_path.o
+get_path_main.c
+main.c
+makefile
+mysh
+mysh.dSYM
+sh.c
+sh.h
+sh.o
+sleep.c
+test-1+2.c

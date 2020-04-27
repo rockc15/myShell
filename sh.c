@@ -149,8 +149,6 @@ int sh( int argc, char **argv, char **envp ) {
                         if(re == 0)
                             open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
                         else if(re == 1){
-                            //does not append right now 
-                            printf("does the works??????");
                             open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
                         }
                     }
@@ -485,7 +483,6 @@ int redirection(char ** args){
     for(int i = 0; args[i] != NULL; i++){
         //append output 
         if(strstr(args[i], ">>")){
-            printf("yooo thsu su what tim tedt ign ");
             args[i] = NULL;
             return 1;
         }
