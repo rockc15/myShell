@@ -141,16 +141,23 @@ int sh( int argc, char **argv, char **envp ) {
                     perror("Fork Error: ");
                     exit(1);
                 }else if(pid == 0){
-
+                    int fd;
                     // determmines if there was a redirection 
                     int re = redirection(args);
                     if (0 <= re ){
-                        close(STDOUT_FILENO);
-                        if(re == 0)
-                            open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
-                        else if(re == 1){
-                            open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                        
+                        
+                        if(re == 0){
+                            close(STDOUT_FILENO);
+                            fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+                        }else if(re == 1){
+                            close(STDOUT_FILENO);
+                            fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                        }else if(re == 2){
+                            close(STDIN_FILENO);
+                            stdin = fopen(args[argsIndex - 1], "r");
                         }
+                        
                     }
 
                     //check for absolute path
