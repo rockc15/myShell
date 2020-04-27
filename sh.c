@@ -16,27 +16,41 @@ struct Node {
 struct Node* head_watched_users = NULL;
 struct Node* last_watched_users = NULL;
 
-// watch user: thread function
+/**
+ * Watchuser: Thread function. 
+ * 
+ * @param   arg     first user to watch.
+ */
 void *user(void * arg) {
-    pthread_mutex_lock(&lock);
-    printf("%s \n", arg);
+    //printf("%s \n", arg);
     struct utmpx * up;
     setutxent();
     int watchTime = 20;
-    while(watchTime) {
-        while (up = getutxent()){	/* get an entry */
-            if ( up->ut_type == USER_PROCESS ){
-                printf("%s has logged on %s from %s\n", up->ut_user, up->ut_line, up->ut_host);
+    while(watchTime > 0) {
+        pthread_mutex_lock(&lock); // prevent collision with watchUser function
+
+        while (up = getutxent()) {	/* get an entry */
+            if ( up->ut_type == USER_PROCESS ) {
+
+                // search the linked list for it
+                struct Node* temp = head_watched_users;
+                while(temp->next != NULL) {
+                    if(strcmp(up->ut_user, temp->data) == 0)
+                        printf("%s has logged on %s from %s\n", up->ut_user, up->ut_line, up->ut_host);
+                    temp = temp->next;
+                }
+
             }
         }
+
+        pthread_mutex_unlock(&lock); // prevent collision with watchUser function
         watchTime -= 3;
         sleep(3);
     }
-    pthread_mutex_unlock(&lock);
 }
 
 /**
- * start a shell.
+ * Start a shell.
  *
  * @param   argc    number of command line arguments
  * @param   argv    command line arguments
@@ -555,6 +569,7 @@ int backGround(char ** args){
 void watchUser(char ** args){
     if(head_watched_users == NULL) {
         head_watched_users = (struct Node*)malloc(sizeof(struct Node));
+        last_watched_users = head_watched_users;
     }
 
     if(p == NULL) {
@@ -563,19 +578,30 @@ void watchUser(char ** args){
         printf("returned %d \n", m);
     }
 
+    pthread_mutex_lock(&lock); // prevent collision with user function
+
     if(strcmp("off", args[2]) == 0) { // watchuser <username> off
         // stop watching user
         struct Node* temp = head_watched_users;
         while(temp->next != NULL) {
             if(strcmp(args[1], temp->data) == 0)
                 break;
+            temp = temp->next;
         }
 
         if(temp != NULL) {
             // if the user exists in the linked list, remove them
             if(temp = head_watched_users) { 
                 // temp is head
+                struct Node* free_me = head_watched_users;
                 head_watched_users = head_watched_users->next;
+                free(free_me);
+            } else if(temp = last_watched_users) {
+                // temp is last
+
+            } else {
+                // temp is in middle
+                
             }
         }
     } else {
@@ -584,6 +610,7 @@ void watchUser(char ** args){
         while(temp->next != NULL) {
             if(strcmp(args[1], temp->data) == 0)
                 break;
+            temp = temp->next;
         }
 
         if(temp == NULL) {
@@ -593,4 +620,6 @@ void watchUser(char ** args){
             last_watched_users->data = args[1];
         }
     }
+
+    pthread_mutex_unlock(&lock); // prevent collision with user function
 }
