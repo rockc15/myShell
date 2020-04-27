@@ -131,7 +131,7 @@ int sh( int argc, char **argv, char **envp ) {
             } else{
 
                 //determines if there is background process
-                if(strcmp("&", args[argsIndex-1]) == 0){
+                if(backGround(args)){
                     printf("adding to the backgorund \n");
                     args[argsIndex-1] = NULL;
                     background = 1;
@@ -143,6 +143,17 @@ int sh( int argc, char **argv, char **envp ) {
                     perror("Fork Error: ");
                     exit(1);
                 }else if(pid == 0){
+
+                    // determmines if there was a redirection 
+                    int re = redirection(args);
+                    if (0 <= re ){
+                        close(STDOUT_FILENO);
+                        if(re == 0)
+                            open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+                        else if(re == 1){
+                            open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                        }
+                    }
                     //check for absolute path
                     if(commandline[0] == '/' || commandline[0] =='.'){
                         if (access(commandline, X_OK ) == 0){
@@ -464,6 +475,41 @@ void setEnv(char **args){
     free(enbuf);
 }
 
+int redirection(char ** args){
+    for(int i = 0; args[i] != NULL; i++){
+        //override output 
+        if(strstr(args[i], ">")){
+            args[i] = NULL;
+            return 0;
+        }
+        //append output 
+        if(strstr(args[i], ">>")){
+            args[i] = NULL;
+            return 1;
+        }
+
+        if(strstr(args[i], "<")){
+            args[i] = NULL;
+            return 2;
+        }
+    }
+           
+    return -1;
+}
+
+int backGround(char ** args){
+    for(int i = 0; args[i] != NULL; i++){
+        if(strstr(args[i], "&") && (strstr(args[i], "<") || strstr(args[i], ">"))){
+            return 1;
+        }
+        if(strstr(args[i], "&")){
+            args[i] = NULL;
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 void watchUser(char ** args){
     pthread_t p;

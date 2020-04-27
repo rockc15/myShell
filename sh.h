@@ -13,6 +13,7 @@
 #include "get_path.h"
 #include <utmpx.h>
 #include <pthread.h>
+#include <fcntl.h>
 
 
 
@@ -30,6 +31,8 @@ void changePrompt(char * pro, char * args1);
 void printEnv(char **args);
 void setEnv(char **args);
 void watchUser(char ** args);
+int redirection(char ** args);
+int backGround(char ** args);
 
 #define PROMPTMAX 32
 #define MAXARGS 10
