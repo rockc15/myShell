@@ -11,4 +11,4 @@ get_path.o: get_path.c get_path.h
 	$(CC) -g -c get_path.c
 
 clean:
-	rm -rf sh.o get_path.o mysh
+	rm -rf sh.o get_path.o mysh sleep

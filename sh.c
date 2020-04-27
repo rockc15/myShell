@@ -131,9 +131,7 @@ int sh( int argc, char **argv, char **envp ) {
             } else{
 
                 //determines if there is background process
-                if(strcmp("&", args[argsIndex-1]) == 0){
-                    printf("adding to the backgorund \n");
-                    args[argsIndex-1] = NULL;
+                if(backGround(args)){
                     background = 1;
                 }else{
                     background = 0;
@@ -143,6 +141,25 @@ int sh( int argc, char **argv, char **envp ) {
                     perror("Fork Error: ");
                     exit(1);
                 }else if(pid == 0){
+                    int fd;
+                    // determmines if there was a redirection 
+                    int re = redirection(args);
+                    if (0 <= re ){
+                        
+                        
+                        if(re == 0){
+                            close(STDOUT_FILENO);
+                            fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+                        }else if(re == 1){
+                            close(STDOUT_FILENO);
+                            fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                        }else if(re == 2){
+                            close(STDIN_FILENO);
+                            stdin = fopen(args[argsIndex - 1], "r");
+                        }
+                        
+                    }
+
                     //check for absolute path
                     if(commandline[0] == '/' || commandline[0] =='.'){
                         if (access(commandline, X_OK ) == 0){
@@ -464,6 +481,47 @@ void setEnv(char **args){
     free(enbuf);
 }
 
+/**
+ *  deterimes if there is a redirection symbol in the command line 
+ * 
+ *  @param   args    full command line (ex: `setnev ...`).
+ */
+int redirection(char ** args){
+    for(int i = 0; args[i] != NULL; i++){
+        //append output 
+        if(strstr(args[i], ">>")){
+            args[i] = NULL;
+            return 1;
+        }
+        //override output 
+        if(strstr(args[i], ">")){
+            args[i] = NULL;
+            return 0;
+        }
+
+        if(strstr(args[i], "<")){
+            printf("yooo thsu su what tim tedt ign ");
+            args[i] = NULL;
+            return 2;
+        }
+    }
+           
+    return -1;
+}
+
+int backGround(char ** args){
+    for(int i = 0; args[i] != NULL; i++){
+        if(strstr(args[i], "&") && (strstr(args[i], "<") || strstr(args[i], ">"))){
+            return 1;
+        }
+        if(strstr(args[i], "&")){
+            args[i] = NULL;
+            return 1;
+        }
+    }
+
+    return 0;
+}
 
 void watchUser(char ** args){
     pthread_t p;
