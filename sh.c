@@ -3,7 +3,12 @@
 extern char **environ;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
 
-
+/**
+ * 
+ * 
+ * @param: an array of char for the utmpx file 
+ * 
+ */
 void *user(void * arg){
     pthread_mutex_lock(&lock);
     printf("%s \n", arg);
@@ -517,7 +522,6 @@ int redirection(char ** args){
         }
 
         if(strstr(args[i], "<")){
-            printf("yooo thsu su what tim tedt ign ");
             args[i] = NULL;
             return 2;
         }
@@ -526,6 +530,12 @@ int redirection(char ** args){
     return -1;
 }
 
+
+/**
+ *  deterimes if there background process command 
+ * 
+ *  @param   args    full command line (ex: `setnev ...`).
+ */
 int backGround(char ** args){
     for(int i = 0; args[i] != NULL; i++){
         if(strstr(args[i], "&") && (strstr(args[i], "<") || strstr(args[i], ">"))){
@@ -540,6 +550,11 @@ int backGround(char ** args){
     return 0;
 }
 
+/**
+ * watches a user 
+ * 
+ *  @param   args    full command line (ex: `setnev ...`).
+ */
 void watchUser(char ** args){
     pthread_t p;
     int m;
