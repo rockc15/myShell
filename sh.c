@@ -40,6 +40,7 @@ int sh( int argc, char **argv, char **envp ) {
     glob_t paths;
     char ** globArray = calloc(MAXARGS, sizeof(args)+sizeof(paths.gl_pathv));
     int background = 0;
+    int noclobber = 0;
 
    
 
@@ -128,7 +129,11 @@ int sh( int argc, char **argv, char **envp ) {
             }else if (strcmp("watchuser", args[0]) == 0){
                  printf("Executing built-in %s \n", args[0]);
                  watchUser(args);
-            } else{
+            }else if((strcmp("set", args[0]) == 0) && (strcmp("noclobber", args[1]) == 0)){
+                noclobber = 1;
+            }else if((strcmp("unset", args[0]) == 0) && (strcmp("noclobber", args[1]) == 0)){
+                noclobber = 0;
+            }else{
 
                 //determines if there is background process
                 if(backGround(args)){
@@ -145,14 +150,25 @@ int sh( int argc, char **argv, char **envp ) {
                     // determmines if there was a redirection 
                     int re = redirection(args);
                     if (0 <= re ){
-                        
-                        
-                        if(re == 0){
+                        if(re == 0 && noclobber == 1){
+                            printf("File already exists \n");
+                            exit(27);
+                        }
+                        if(re == 0 && noclobber == 0){
                             close(STDOUT_FILENO);
                             fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
                         }else if(re == 1){
                             close(STDOUT_FILENO);
-                            fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                            if(noclobber == 0)
+                                fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                            else{
+                                if ( 0 > open(args[argsIndex - 1], O_WRONLY|O_APPEND, S_IRWXU)){
+                                    printf("Cannot create a new file");
+                                }
+                                
+
+                            }
+                            
                         }else if(re == 2){
                             close(STDIN_FILENO);
                             stdin = fopen(args[argsIndex - 1], "r");
@@ -211,7 +227,7 @@ int sh( int argc, char **argv, char **envp ) {
                         exit(127);
                     }
                 }
-                //
+                //catchs all the zombie processes 
                 waitpid(-1, &status, WNOHANG);
                 if(background){ //if background is true the parent won't wait for the child 
                     printf("+[%d]\n", pid);

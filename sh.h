@@ -34,5 +34,6 @@ void watchUser(char ** args);
 int redirection(char ** args);
 int backGround(char ** args);
 
+
 #define PROMPTMAX 32
 #define MAXARGS 10
