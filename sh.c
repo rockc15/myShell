@@ -8,13 +8,135 @@ pthread_t p;
 int m;
 
 // watch user: A linked list node 
-struct Node { 
-    char * data; 
-    struct Node* next; 
-}; 
+struct node {
+   char* key;
+   struct node *next;
+};
 
-struct Node* head_watched_users = NULL;
-struct Node* last_watched_users = NULL;
+struct node *head = NULL;
+struct node *current = NULL;
+
+//display the list
+void print_list() {
+    struct node *ptr = head;
+    printf("\n[ ");
+	
+    //start from the beginning
+    while(ptr != NULL) {
+        printf("(%s) ",ptr->key,ptr->key);
+        ptr = ptr->next;
+    }
+	
+    printf(" ]");
+}
+
+//insert link at the first location
+void insert_first(char* key) {
+    //create a link
+    struct node *link = (struct node*) malloc(sizeof(struct node));
+	
+    link->key = key;
+	
+    //point it to old first node
+    link->next = head;
+	
+    //point first to new first node
+    head = link;
+}
+
+//delete first item
+struct node* delete_first() {
+
+    //save reference to first link
+    struct node *tempLink = head;
+	
+    //mark next to first link as first 
+    head = head->next;
+	
+    //return the deleted link
+    return tempLink;
+}
+
+//is list empty
+int is_empty() {
+    return head == NULL;
+}
+
+int length() {
+    int length = 0;
+    struct node *current;
+	
+    for(current = head; current != NULL; current = current->next) {
+        length++;
+    }
+	
+   return length;
+}
+
+// find a link with given key
+struct node* find(char* key) {
+
+    // start from the first link
+    struct node* current = head;
+
+    // if list is empty
+    if(head == NULL) {
+        return NULL;
+    }
+
+    // navigate through list
+    while(current->key != key) {
+	
+        // if it is last node
+        if(current->next == NULL) {
+            return NULL;
+        } else {
+            // go to next link
+            current = current->next;
+        }
+    }      
+	
+    // if data found, return the current Link
+    return current;
+}
+
+// delete a link with given key
+struct node* delete(int key) {
+
+    // start from the first link
+    struct node* current = head;
+    struct node* previous = NULL;
+	
+    // if list is empty
+    if(head == NULL) {
+        return NULL;
+    }
+
+    // navigate through list
+    while(current->key != key) {
+
+        // if it is last node
+        if(current->next == NULL) {
+            return NULL;
+        } else {
+            //store reference to current link
+            previous = current;
+            //move to next link
+            current = current->next;
+        }
+    }
+
+    //found a match, update the link
+    if(current == head) {
+        //change first to point to next link
+        head = head->next;
+    } else {
+        //bypass the current link
+        previous->next = current->next;
+    }    
+	
+   return current;
+}
 
 /**
  * Watchuser: Thread function. 
@@ -33,9 +155,9 @@ void *user(void * arg) {
             if ( up->ut_type == USER_PROCESS ) {
 
                 // search the linked list for it
-                struct Node* temp = head_watched_users;
-                while(temp->next != NULL) {
-                    if(strcmp(up->ut_user, temp->data) == 0)
+                struct node* temp = head;
+                while(temp != NULL) {
+                    if(strcmp(up->ut_user, temp->key) == 0)
                         printf("%s has logged on %s from %s\n", up->ut_user, up->ut_line, up->ut_host);
                     temp = temp->next;
                 }
@@ -253,15 +375,15 @@ int sh( int argc, char **argv, char **envp ) {
     // close watch user stuff
     pthread_cancel(p);
     pthread_join(p, (void** ) &m);
-    if(head_watched_users != NULL) {
-        struct Node* prev = head_watched_users;
-        struct Node* temp = head_watched_users->next;
+    if(!is_empty()) {
+        struct node* prev = head;
+        struct node* temp = head->next;
 
-        do {
+        while(temp != NULL) {
             free(prev);
             prev = temp;
             temp = temp->next;
-        } while(temp->next != NULL);
+        }
     }
 
     // free everything else
@@ -567,15 +689,11 @@ int backGround(char ** args){
  *                  [2]: "off"; meaning to stop watching a user
  */
 void watchUser(char ** args){
-    if(head_watched_users == NULL) {
-        head_watched_users = (struct Node*)malloc(sizeof(struct Node));
-        head_watched_users->data = "";
-        last_watched_users = head_watched_users;
+    if(is_empty()) {
+        insert_first("");
     }
 
-    printf("me1\n");
-    printWatchedUsers();
-    printf("me2\n");
+    print_list();
 
     if(p == NULL) {
         pthread_create(&p, NULL, user, (void*) args[1]);
@@ -585,76 +703,20 @@ void watchUser(char ** args){
     pthread_mutex_lock(&lock); // prevent collision with user function
 
     if(strcmp("off", args[2]) == 0) { // watchuser <username> off
+        printf("removing user %s from watchlist", args[1]);
         // stop watching user
-        struct Node* temp = head_watched_users;
-        while(temp != NULL) {
-            if(strcmp(args[1], temp->data) == 0)
-                break;
-            temp = temp->next;
-        }
+        struct node* temp = find(args[2]);
 
-        if(temp != NULL) {
-            // if the user exists in the linked list, remove them
-            if(temp = head_watched_users) { 
-                // temp is head
-                struct Node* free_me = head_watched_users;
-                if(head_watched_users->next == NULL)
-                    head_watched_users->data = "";
-                else
-                    head_watched_users = head_watched_users->next;
-                free(free_me);
-            } else if(temp = last_watched_users) {
-                // temp is last
-                struct Node* prev = head_watched_users;
-                while(prev->next != NULL && prev->next != temp) {
-                    prev = prev->next;
-                }
-                free(temp);
-                prev->next = NULL;
-            } else {
-                // temp is in middle
-                struct Node* prev = head_watched_users;
-                while(prev->next != NULL && prev->next != temp) {
-                    prev = prev->next;
-                }
-                prev->next = temp->next;
-                free(temp);
-            }
+        if(temp != NULL) { // if the user exists in the linked list, remove them
+            delete(temp->key);
         }
     } else {
+        printf("start watching user\n");
         // start watching user
-        struct Node* temp = head_watched_users;
-        while(temp != NULL) {
-            if(strcmp(args[1], temp->data) == 0)
-                break;
-            temp = temp->next;
-        }
-
-        if(temp == NULL) {
-            // user does not exist in linked list, add them
-            last_watched_users->next = (struct Node*)malloc(sizeof(struct Node));
-            last_watched_users = last_watched_users->next;
-            last_watched_users->data = args[1];
-        }
+        insert_first(args[1]);
     }
 
-    printWatchedUsers();
+    print_list();
 
     pthread_mutex_unlock(&lock); // prevent collision with user function
-}
-
-/**
- * If the watched users linked list is initialized, this function goes through
- * and prints all its values.
- */ 
-void printWatchedUsers() {
-    struct Node* temp = head_watched_users;
-    int index = 0;
-
-    while(temp != NULL) {
-        printf("%d:%s, ", index, temp->data);
-        temp = temp->next;
-        index++;
-        printf("\n");
-    }
 }
