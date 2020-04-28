@@ -35,5 +35,6 @@ int redirection(char ** args);
 int backGround(char ** args);
 void printWatchedUsers();
 
+
 #define PROMPTMAX 32
 #define MAXARGS 10
