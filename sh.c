@@ -3,6 +3,7 @@
 extern char **environ;
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER; 
 
+
 // watch user
 pthread_t p;
 int m;
@@ -145,6 +146,7 @@ struct node* delete(int key) {
  */
 void *user(void * arg) {
     //printf("%s \n", arg);
+
     struct utmpx * up;
     setutxent();
     int watchTime = 20;
@@ -193,6 +195,7 @@ int sh( int argc, char **argv, char **envp ) {
     glob_t paths;
     char ** globArray = calloc(MAXARGS, sizeof(args)+sizeof(paths.gl_pathv));
     int background = 0;
+    int noclobber = 0;
 
     uid = getuid();
     password_entry = getpwuid(uid);    
@@ -278,8 +281,13 @@ int sh( int argc, char **argv, char **envp ) {
             } else if (strcmp("watchuser", args[0]) == 0) {
                  printf("Executing built-in %s \n", args[0]);
                  watchUser(args);
-            } else {
-                // determines if there is background process
+
+            }else if((strcmp("set", args[0]) == 0) && (strcmp("noclobber", args[1]) == 0)){
+                noclobber = 1;
+            }else if((strcmp("unset", args[0]) == 0) && (strcmp("noclobber", args[1]) == 0)){
+                noclobber = 0;
+            }else{
+
                 if(backGround(args)){
                     background = 1;
                 }else{
@@ -294,15 +302,30 @@ int sh( int argc, char **argv, char **envp ) {
                     // determmines if there was a redirection 
                     int re = redirection(args);
                     if (0 <= re ){
-                        
-                        
-                        if(re == 0) {
+
+                        if(re == 0 && noclobber == 1){
+                            printf("File already exists \n");
+                            exit(27);
+                        }
+                        if(re == 0 && noclobber == 0){
+
                             close(STDOUT_FILENO);
                             fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
                         } else if(re == 1){ 
                             close(STDOUT_FILENO);
-                            fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
-                        } else if(re == 2) {
+
+                            if(noclobber == 0)
+                                fd = open(args[argsIndex - 1], O_CREAT|O_WRONLY|O_APPEND, S_IRWXU);
+                            else{
+                                if ( 0 > open(args[argsIndex - 1], O_WRONLY|O_APPEND, S_IRWXU)){
+                                    printf("Cannot create a new file");
+                                }
+                                
+
+                            }
+                            
+                        }else if(re == 2){
+
                             close(STDIN_FILENO);
                             stdin = fopen(args[argsIndex - 1], "r");
                         }
@@ -360,7 +383,8 @@ int sh( int argc, char **argv, char **envp ) {
                         exit(127);
                     }
                 }
-
+                //catchs all the zombie processes 
+                waitpid(-1, &status, WNOHANG);
                 if(background){ //if background is true the parent won't wait for the child 
                     printf("+[%d]\n", pid);
                 }else if ((pid = waitpid(pid, &status, 0)) < 0){
@@ -653,7 +677,6 @@ int redirection(char ** args){
             return 0;
         }
         if(strstr(args[i], "<")){
-            printf("yooo thsu su what tim tedt ign ");
             args[i] = NULL;
             return 2;
         }
@@ -666,6 +689,8 @@ int redirection(char ** args){
  * Determine if a thread is going to the background or being redirected.
  * 
  * @param   args    command line args
+
+
  */
 int backGround(char ** args){
     for(int i = 0; args[i] != NULL; i++){
