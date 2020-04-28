@@ -159,7 +159,6 @@ int sh( int argc, char **argv, char **envp ) {
             } else if (strcmp("watchuser", args[0]) == 0) {
                  printf("Executing built-in %s \n", args[0]);
                  watchUser(args);
-
             }else if((strcmp("set", args[0]) == 0) && (strcmp("noclobber", args[1]) == 0)){
                 noclobber = 1;
             }else if((strcmp("unset", args[0]) == 0) && (strcmp("noclobber", args[1]) == 0)){
@@ -172,10 +171,15 @@ int sh( int argc, char **argv, char **envp ) {
                     background = 0;
                 }
 
+                
                 if ((pid = fork()) < 0) {
                     perror("Fork Error: ");
                     exit(1);
                 }else if(pid == 0){
+                    if(strchr("|", args[1]) == 0){
+                        printf("pipe");
+                        runPipe(args);
+                    }
                     int fd;
                     // determmines if there was a redirection 
                     int re = redirection(args);
@@ -682,4 +686,27 @@ void printWatchedUsers() {
         index++;
         printf("\n");
     }
+}
+
+/**
+ * handles pipes 
+ * @param   args    command line args
+ */
+int runPipe(char ** args ){
+    int pfds[2];
+
+    pipe(pfds);
+
+    if (!fork()) {
+        close(1);       /* close normal stdout */
+        dup(pfds[1]);   /* make stdout same as pfds[1] */
+        close(pfds[0]); /* we don't need this */
+        execlp(args[0], args[0], NULL);
+    } else {
+        close(0);       /* close normal stdin */
+        dup(pfds[0]);   /* make stdin same as pfds[0] */
+        close(pfds[1]); /* we don't need this */
+        execlp(args[2], args[2], args[3], NULL);
+    }
+
 }
